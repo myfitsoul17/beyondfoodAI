@@ -20,6 +20,7 @@ const OpenAI = require('openai');
 const products = require('./products.json');
 
 const app = express();
+   app.set('trust proxy', 1);
 app.use(express.json({ limit: '100kb' }));
 
 // Lock this down to your real domain(s) in production.
