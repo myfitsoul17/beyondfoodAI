@@ -40,6 +40,7 @@ const openai = new OpenAI({
      apiKey: process.env.OPENAI_API_KEY,
      timeout: 30000,
      maxRetries: 3,
+     fetch: (...args) => fetch(...args),
    });
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
