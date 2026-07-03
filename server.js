@@ -49,26 +49,53 @@ app.use(express.static('public'));
 // Product search — this is the "tool" the model can call so it
 // recommends real SKUs instead of making products up.
 // ---------------------------------------------------------------
-function searchProducts({ goal, diet, high_protein, exclude_allergens = [], category, max_results = 3 }) {
-  let results = products;
+async function searchProducts({ goal, category, max_results = 3 }) {
+  const tagFilter = goal ? `tag:'goal:${goal}'` : '';
+  const productTypeFilter = category ? `product_type:'${category}'` : '';
+  const query = [tagFilter, productTypeFilter].filter(Boolean).join(' AND ');
 
-  if (goal) {
-    results = results.filter(p => p.goals.includes(goal));
-  }
-  if (diet) {
-    results = results.filter(p => p.diet.includes(diet));
-  }
-  if (category) {
-    results = results.filter(p => p.category === category);
-  }
-  if (exclude_allergens && exclude_allergens.length) {
-    results = results.filter(p => !p.allergens.some(a => exclude_allergens.includes(a)));
-  }
-  if (high_protein) {
-    results = [...results].sort((a, b) => b.protein_g - a.protein_g);
-  }
+  const resp = await fetch(
+    `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2024-01/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({
+        query: `
+          query($q: String!, $first: Int!) {
+            products(query: $q, first: $first) {
+              edges {
+                node {
+                  title
+                  handle
+                  description
+                  priceRange { minVariantPrice { amount } }
+                  featuredImage { url }
+                  tags
+                }
+              }
+            }
+          }
+        `,
+        variables: { q: query, first: max_results },
+      }),
+    }
+  );
 
-  return results.slice(0, max_results);
+  const data = await resp.json();
+  return data.data.products.edges.map(({ node }) => ({
+    id: node.handle,
+    name: node.title,
+    price: Number(node.priceRange.minVariantPrice.amount),
+    size: '',
+    tags: node.tags,
+    protein_g: 0,
+    description: node.description.slice(0, 140),
+    url: `https://${process.env.SHOPIFY_STORE_DOMAIN}/products/${node.handle}`,
+    image: node.featuredImage?.url || '',
+  }));
 }
 
 const searchProductsTool = {
@@ -155,7 +182,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
       for (const toolCall of reply.tool_calls) {
         if (toolCall.function.name === 'search_products') {
           const args = JSON.parse(toolCall.function.arguments || '{}');
-          const found = searchProducts(args);
+          const found = await searchProducts(args);
           productResults = found; // surfaced to the frontend for rendering cards
 
           conversation.push({
