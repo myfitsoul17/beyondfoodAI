@@ -36,7 +36,11 @@ const chatLimiter = rateLimit({
   message: { error: 'Too many requests — please wait a moment and try again.' },
 });
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+     apiKey: process.env.OPENAI_API_KEY,
+     timeout: 30000,
+     maxRetries: 3,
+   });
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 app.use(express.static('public'));
