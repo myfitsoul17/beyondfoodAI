@@ -39,8 +39,7 @@ const chatLimiter = rateLimit({
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-app.use('/api/', express.static('public'));
-
+app.use(express.static('public'));
 // ---------------------------------------------------------------
 // Product search — this is the "tool" the model can call so it
 // recommends real SKUs instead of making products up.
