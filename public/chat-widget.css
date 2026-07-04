@@ -47,6 +47,10 @@
   overflow: hidden;
 }
 
+#bf-chat-panel[hidden] {
+  display: none !important;
+}
+
 #bf-chat-header {
   background: var(--bf-green-800);
   color: #fff;
