@@ -68,9 +68,14 @@
   const input = document.getElementById('bf-chat-input');
   const closeBtn = document.getElementById('bf-chat-close');
 
-  launcher.addEventListener('click', () => togglePanel(true));
-  closeBtn.addEventListener('click', () => togglePanel(false));
-
+  launcher.addEventListener('click', (e) => {
+  e.stopPropagation();
+  togglePanel(true);
+});
+closeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  togglePanel(false);
+});
   function togglePanel(open) {
     state.open = open;
     panel.hidden = !open;
